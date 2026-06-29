@@ -130,7 +130,7 @@ export default function Leaderboard() {
                 </button>
               )}
             </div>
-            
+
             <div className="flex flex-wrap gap-6 mb-4">
               <span className="text-sm text-slate-400">Total Online: <strong className="text-white text-base">{stats.online}</strong></span>
               <span className="text-sm text-slate-400">Waiting: <strong className="text-indigo-400 text-base">{stats.waiting}</strong></span>
@@ -179,9 +179,8 @@ export default function Leaderboard() {
                 {entries.map((entry) => (
                   <tr key={entry.playerId} className="hover:bg-slate-800/30 transition-colors group">
                     <td className="p-5 text-center">
-                      <div className={`w-10 h-10 mx-auto rounded-full flex items-center justify-center font-bold text-lg shadow-lg ${
-                        entry.rank <= 3 ? `bg-gradient-to-br ${getMedalColor(entry.rank)}` : getMedalColor(entry.rank)
-                      }`}>
+                      <div className={`w-10 h-10 mx-auto rounded-full flex items-center justify-center font-bold text-lg shadow-lg ${entry.rank <= 3 ? `bg-gradient-to-br ${getMedalColor(entry.rank)}` : getMedalColor(entry.rank)
+                        }`}>
                         {entry.rank}
                       </div>
                     </td>
@@ -206,7 +205,7 @@ export default function Leaderboard() {
                         </span>
                       ) : (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-700 text-slate-300">
-                          DNF
+                          DNS
                         </span>
                       )}
                     </td>
