@@ -15,7 +15,7 @@ export default function GameResult() {
       navigate('/play');
       return;
     }
-    
+
     const fetchSession = async () => {
       try {
         const res = await api.get(`/sessions/${sessionId}`);
@@ -26,7 +26,7 @@ export default function GameResult() {
         setLoading(false);
       }
     };
-    
+
     fetchSession();
   }, [sessionId, playerId, navigate]);
 
@@ -95,7 +95,7 @@ export default function GameResult() {
             <div className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700">
               <p className="text-sm font-medium text-slate-400 mb-1">Time Spent</p>
               <p className="text-3xl font-bold text-white">
-                {session.completedAt 
+                {session.completedAt
                   ? Math.floor((new Date(session.completedAt).getTime() - new Date(session.startedAt).getTime()) / 1000)
                   : session.gameTimeLimit}s
               </p>
@@ -103,13 +103,13 @@ export default function GameResult() {
           </div>
 
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Link 
-              to={`/leaderboard/${session.challengeId}`}
+            <Link
+              to={`/leaderboard`}
               className="px-8 py-4 rounded-xl font-bold text-white bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 transition-all shadow-lg shadow-indigo-600/25 flex-1"
             >
               View Leaderboard
             </Link>
-            <Link 
+            <Link
               to={`/lobby/${session.challengeId}`}
               className="px-8 py-4 rounded-xl font-bold text-white bg-slate-800 hover:bg-slate-700 transition-all border border-slate-700 flex-1"
             >
