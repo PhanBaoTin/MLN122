@@ -12,7 +12,7 @@ export default function PlayerJoin() {
   const [name, setName] = useState(playerName || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [challengeInfo, setChallengeInfo] = useState<any>(null);
+
 
   useEffect(() => {
     if (shareCode) {

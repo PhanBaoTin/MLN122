@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { usePlayerStore } from '../store/playerStore';
 import { useSocket } from '../hooks/useSocket';
-import api from '../services/api';
+
 
 interface Player {
   playerId: string;
@@ -75,10 +75,9 @@ export default function Lobby() {
       scrollToBottom();
     });
 
-    socket.on('game:adminStart', (data: { playerSessions: { playerId: string; sessionId: string }[] }) => {
-      const mySession = data.playerSessions.find(ps => ps.playerId === playerId);
-      if (mySession && mySession.sessionId) {
-        navigate(`/game/${mySession.sessionId}`);
+    socket.on('game:adminStart', () => {
+      if (sessionId) {
+        navigate(`/game/${sessionId}`);
       }
     });
 

@@ -145,9 +145,11 @@ export class SessionService {
     session.currentQuestionIndex += 1;
     session.totalScore += answerScore;
 
-    // Check if all questions used
+    // Check if all questions used.
+    // If they answer the last question INCORRECTLY, the game is over immediately.
+    // If they answer CORRECTLY, they get one final move, so we DO NOT complete it here.
     const totalQuestions = challenge.settings.maxQuestionsCount;
-    if (session.currentQuestionIndex >= totalQuestions) {
+    if (session.currentQuestionIndex >= totalQuestions && !isCorrect) {
       session.isCompleted = true;
       session.completedAt = new Date();
       session.currentQuestionIndex = totalQuestions;
@@ -204,6 +206,15 @@ export class SessionService {
       );
       const timeRemaining = Math.max(0, session.gameTimeLimit - elapsedSeconds);
       session.totalScore += timeRemaining * challenge.settings.timeRemainingWeight;
+    } else {
+      // If puzzle is not solved, check if they have run out of questions
+      const challenge = await this.challengeService.findById(
+        session.challengeId.toString(),
+      );
+      if (session.currentQuestionIndex >= challenge.settings.maxQuestionsCount) {
+        session.isCompleted = true;
+        session.completedAt = new Date();
+      }
     }
 
     await session.save();
