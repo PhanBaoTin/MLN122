@@ -3,6 +3,12 @@ import { useParams, Link } from 'react-router-dom';
 import api from '../services/api';
 import { useSocket } from '../hooks/useSocket';
 
+interface Player {
+  playerId: string;
+  playerName: string;
+  status: 'waiting' | 'playing' | 'completed';
+}
+
 interface LeaderboardEntry {
   playerId: string;
   playerName: string;
@@ -18,8 +24,14 @@ export default function Leaderboard() {
   const isGlobal = !challengeId;
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [stats, setStats] = useState({ online: 0, waiting: 0, playing: 0, completed: 0 });
+  const [startingGame, setStartingGame] = useState(false);
+  const isAdmin = !!localStorage.getItem('adminToken');
 
-  const { socket } = useSocket(challengeId || null, 'viewer', 'Viewer');
+  // Use a unique ID for the viewer so multiple viewers don't clash in the lobby map
+  const [viewerId] = useState(() => `viewer-${Math.random().toString(36).substring(7)}`);
+  const { socket } = useSocket(challengeId || null, viewerId, 'Admin Viewer');
 
   useEffect(() => {
     fetchLeaderboard();
@@ -28,14 +40,22 @@ export default function Leaderboard() {
       socket.on('leaderboard:update', (newEntries: LeaderboardEntry[]) => {
         setEntries(newEntries);
       });
+      socket.on('lobby:playerList', (list: Player[]) => {
+        setPlayers(list);
+      });
+      socket.on('lobby:stats', (newStats: any) => {
+        setStats(newStats);
+      });
     }
 
     return () => {
       if (socket) {
         socket.off('leaderboard:update');
+        socket.off('lobby:playerList');
+        socket.off('lobby:stats');
       }
     };
-  }, [challengeId, socket]);
+  }, [challengeId, socket, isGlobal]);
 
   const fetchLeaderboard = async () => {
     try {
@@ -47,6 +67,20 @@ export default function Leaderboard() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleStartGame = async () => {
+    if (!challengeId) return;
+    try {
+      setStartingGame(true);
+      await api.post(`/challenges/${challengeId}/start`);
+      alert('Game started successfully!');
+    } catch (error) {
+      console.error(error);
+      alert('Failed to start game. Are you logged in as admin?');
+    } finally {
+      setStartingGame(false);
     }
   };
 
@@ -76,6 +110,45 @@ export default function Leaderboard() {
             <Link to="/leaderboard" className="px-5 py-2 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 border border-indigo-500/30 text-sm font-medium transition-colors">
               View Global Leaderboard
             </Link>
+          </div>
+        )}
+
+        {!isGlobal && (
+          <div className="mt-8 bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 text-left shadow-lg">
+            <div className="flex justify-between items-center mb-4 border-b border-slate-700/50 pb-4">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                Lobby Status
+              </h3>
+              {isAdmin && (
+                <button
+                  onClick={handleStartGame}
+                  disabled={startingGame}
+                  className="px-6 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-bold rounded-xl shadow-lg transition-transform hover:scale-105 disabled:opacity-50"
+                >
+                  {startingGame ? 'Starting...' : 'Start Game for All'}
+                </button>
+              )}
+            </div>
+            
+            <div className="flex flex-wrap gap-6 mb-4">
+              <span className="text-sm text-slate-400">Total Online: <strong className="text-white text-base">{stats.online}</strong></span>
+              <span className="text-sm text-slate-400">Waiting: <strong className="text-indigo-400 text-base">{stats.waiting}</strong></span>
+              <span className="text-sm text-slate-400">Playing: <strong className="text-cyan-400 text-base">{stats.playing}</strong></span>
+              <span className="text-sm text-slate-400">Completed: <strong className="text-emerald-400 text-base">{stats.completed}</strong></span>
+            </div>
+
+            <div className="flex flex-wrap gap-3 max-h-40 overflow-y-auto custom-scrollbar">
+              {players.filter(p => p.status === 'waiting').map(p => (
+                <div key={p.playerId} className="px-3 py-1.5 bg-slate-800/80 border border-slate-700 rounded-xl text-sm flex items-center gap-2 shadow-sm">
+                  <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></div>
+                  <span className="text-slate-200 font-medium">{p.playerName}</span>
+                </div>
+              ))}
+              {players.filter(p => p.status === 'waiting').length === 0 && (
+                <div className="text-slate-500 text-sm italic py-2">No players currently waiting in lobby.</div>
+              )}
+            </div>
           </div>
         )}
       </div>

@@ -69,7 +69,7 @@ export default function GameResult() {
           </div>
 
           <h2 className="text-4xl font-extrabold text-white mb-2">
-            {isWin ? 'Puzzle Solved!' : 'Time is Up!'}
+            {isWin ? 'You Win! Puzzle Solved!' : 'You Lose! Puzzle Not Solved!'}
           </h2>
           <p className="text-lg text-slate-400 mb-8">
             Great effort, <span className="text-white font-semibold">{playerName}</span>! Here is your final result.

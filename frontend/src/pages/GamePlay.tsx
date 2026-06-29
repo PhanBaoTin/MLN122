@@ -228,6 +228,15 @@ export default function GamePlay() {
             </div>
           </div>
 
+          <div className="flex flex-col items-center">
+            <p className="text-xs text-slate-400 mb-1">Target Image</p>
+            <img 
+              src={`http://localhost:3000${session.assignedImageUrl}`} 
+              alt="Reference" 
+              className="w-16 h-16 md:w-20 md:h-20 object-cover rounded-lg border border-slate-600 shadow-md hover:scale-150 transition-transform duration-300 origin-top"
+            />
+          </div>
+
           <div className="text-right">
             <p className="text-xs text-slate-400">Time Remaining</p>
             <p className={`font-mono text-2xl font-bold ${gameTimeLeft < 60 ? 'text-red-400 animate-pulse' : 'text-cyan-400'}`}>
@@ -235,6 +244,12 @@ export default function GamePlay() {
             </p>
           </div>
         </div>
+
+        {canMove && (
+          <div className="bg-emerald-900/30 border border-emerald-500/50 p-4 rounded-2xl text-center animate-bounce shadow-lg shadow-emerald-900/20">
+            <p className="text-emerald-400 font-bold text-lg">Correct! Tap a glowing tile to move it.</p>
+          </div>
+        )}
 
         <PuzzleBoard
           puzzleState={session.puzzleState}
@@ -244,12 +259,6 @@ export default function GamePlay() {
           canMove={canMove}
           isCompleted={session.isCompleted}
         />
-
-        {canMove && (
-          <div className="bg-emerald-900/30 border border-emerald-500/50 p-4 rounded-2xl text-center animate-bounce shadow-lg shadow-emerald-900/20">
-            <p className="text-emerald-400 font-bold text-lg">Correct! Tap a glowing tile to move it.</p>
-          </div>
-        )}
       </div>
 
       {/* Right Column: Questions */}

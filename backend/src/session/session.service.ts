@@ -12,6 +12,7 @@ import {
   applyMove,
   isSolved,
 } from './puzzle.utils';
+import { LeaderboardService } from '../leaderboard/leaderboard.service';
 
 @Injectable()
 export class SessionService {
@@ -20,6 +21,7 @@ export class SessionService {
     private sessionModel: Model<GameSessionDocument>,
     private challengeService: ChallengeService,
     private questionService: QuestionService,
+    private leaderboardService: LeaderboardService,
   ) { }
 
   async createSession(
@@ -104,7 +106,7 @@ export class SessionService {
     dto: SubmitAnswerDto,
   ): Promise<{ isCorrect: boolean; canMove: boolean; score: number; speedBonus: number }> {
     const session = await this.findById(sessionId);
-    this.validateSessionActive(session);
+    await this.validateSessionActive(session);
 
     // Get the question to check answer
     const question = await this.questionService.findById(dto.questionId);
@@ -145,14 +147,16 @@ export class SessionService {
 
     // Check if all questions used
     const totalQuestions = challenge.settings.maxQuestionsCount;
-    // if (session.currentQuestionIndex >= totalQuestions) {
-    //   session.isCompleted = true;
-    //   session.completedAt = new Date();
-    // }
     if (session.currentQuestionIndex >= totalQuestions) {
+      session.isCompleted = true;
+      session.completedAt = new Date();
       session.currentQuestionIndex = totalQuestions;
     }
     await session.save();
+
+    if (session.isCompleted) {
+      await this.updateLeaderboard(session);
+    }
 
     return {
       isCorrect,
@@ -172,7 +176,7 @@ export class SessionService {
     isCompleted: boolean;
   }> {
     const session = await this.findById(sessionId);
-    this.validateSessionActive(session);
+    await this.validateSessionActive(session);
 
     const newState = applyMove(session.puzzleState, dto.tileRow, dto.tileCol);
     if (!newState) {
@@ -203,6 +207,10 @@ export class SessionService {
     }
 
     await session.save();
+    
+    if (session.isCompleted) {
+      await this.updateLeaderboard(session);
+    }
 
     return {
       puzzleState: session.puzzleState,
@@ -218,6 +226,7 @@ export class SessionService {
       session.isCompleted = true;
       session.completedAt = new Date();
       await session.save();
+      await this.updateLeaderboard(session);
     }
     return session;
   }
@@ -236,6 +245,8 @@ export class SessionService {
     return this.sessionModel.find({ challengeId }).sort({ totalScore: -1 }).exec();
   }
 
+
+
   async getSessionStats(challengeId: string) {
     const sessions = await this.sessionModel.find({ challengeId }).exec();
     return {
@@ -246,7 +257,7 @@ export class SessionService {
     };
   }
 
-  private validateSessionActive(session: GameSessionDocument) {
+  private async validateSessionActive(session: GameSessionDocument) {
     if (session.isCompleted) {
       throw new BadRequestException('Game session is already completed');
     }
@@ -257,8 +268,53 @@ export class SessionService {
     if (elapsedSeconds >= session.gameTimeLimit) {
       session.isCompleted = true;
       session.completedAt = new Date();
-      session.save();
+      await session.save();
+      await this.updateLeaderboard(session);
       throw new BadRequestException('Time is up');
     }
+  }
+
+  private async updateLeaderboard(session: GameSessionDocument) {
+    const timeSpent = session.completedAt
+      ? Math.floor((session.completedAt.getTime() - session.startedAt.getTime()) / 1000)
+      : session.gameTimeLimit;
+
+    const correctAnswers = session.questionsAnswered.filter((q: any) => q.isCorrect).length;
+
+    await this.leaderboardService.upsertEntry({
+      challengeId: session.challengeId.toString(),
+      playerId: session.playerId,
+      playerName: session.playerName,
+      totalScore: session.totalScore,
+      correctAnswers,
+      puzzleSolved: session.isPuzzleSolved,
+      timeSpent,
+    });
+  }
+
+  /**
+   * Called by Admin to start all waiting sessions for a challenge.
+   * Resets startedAt so the countdown begins from now.
+   * Returns all affected sessions (with sessionId + playerId mapping).
+   */
+  async startAllSessionsForChallenge(challengeId: string): Promise<{ playerId: string; sessionId: string }[]> {
+    const sessions = await this.sessionModel.find({
+      challengeId,
+      isCompleted: false,
+    }).exec();
+
+    const now = new Date();
+    const playerSessions: { playerId: string; sessionId: string }[] = [];
+
+    for (const session of sessions) {
+      session.startedAt = now;
+      await session.save();
+      playerSessions.push({
+        playerId: session.playerId,
+        sessionId: (session._id as any).toString(),
+      });
+    }
+
+    return playerSessions;
   }
 }

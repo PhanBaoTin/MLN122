@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Question, QuestionDocument } from './question.schema';
@@ -9,6 +9,7 @@ import { ChallengeService } from '../challenge/challenge.service';
 export class QuestionService {
   constructor(
     @InjectModel(Question.name) private questionModel: Model<QuestionDocument>,
+    @Inject(forwardRef(() => ChallengeService))
     private challengeService: ChallengeService,
   ) {}
 

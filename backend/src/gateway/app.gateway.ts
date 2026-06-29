@@ -279,4 +279,32 @@ export class AppGateway
     this.server.to(`lobby:${challengeId}`).emit('lobby:playerList', players);
     this.server.to(`lobby:${challengeId}`).emit('lobby:stats', stats);
   }
+
+  /**
+   * Called by Admin endpoint to broadcast game start to all players in the lobby.
+   * Each player receives their own sessionId so they can navigate to the correct game.
+   */
+  broadcastGameStart(challengeId: string, playerSessions: { playerId: string; sessionId: string }[]) {
+    this.server.to(`lobby:${challengeId}`).emit('game:adminStart', {
+      playerSessions,
+    });
+
+    // Update all lobby players to 'playing' status
+    const lobby = this.lobbies.get(challengeId);
+    if (lobby) {
+      lobby.forEach((player) => {
+        player.status = 'playing';
+      });
+      this.broadcastLobbyUpdate(challengeId);
+    }
+  }
+
+  /**
+   * Returns the list of players currently in the lobby for a given challenge.
+   */
+  getLobbyPlayers(challengeId: string) {
+    const lobby = this.lobbies.get(challengeId);
+    if (!lobby) return [];
+    return Array.from(lobby.values());
+  }
 }

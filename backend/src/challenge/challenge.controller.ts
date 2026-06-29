@@ -1,7 +1,7 @@
 import {
   Controller, Get, Post, Put, Delete, Patch,
   Body, Param, UseGuards, Request, UseInterceptors,
-  UploadedFile,
+  UploadedFile, Inject, forwardRef
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -10,18 +10,34 @@ import { v4 as uuidv4 } from 'uuid';
 import { ChallengeService } from './challenge.service';
 import { CreateChallengeDto, UpdateChallengeDto } from './challenge.dto';
 import { JwtAuthGuard } from '../admin/jwt-auth.guard';
+import { SessionService } from '../session/session.service';
+import { AppGateway } from '../gateway/app.gateway';
 
 const uploadDir = process.env.UPLOAD_DIR || './uploads';
 
 @Controller('challenges')
 export class ChallengeController {
-  constructor(private readonly challengeService: ChallengeService) { }
+  constructor(
+    private readonly challengeService: ChallengeService,
+    @Inject(forwardRef(() => SessionService))
+    private readonly sessionService: SessionService,
+    private readonly appGateway: AppGateway,
+  ) { }
 
   // 🔓 API PUBLIC DÀNH CHO PLAYER (VÀ ADMIN)
   // Không sử dụng @UseGuards(JwtAuthGuard) ở đây để người chơi vào tự do
   @Get(':id/questions')
   async getQuestions(@Param('id') id: string) {
     return this.challengeService.findWithQuestions(id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/start')
+  async startGame(@Param('id') id: string) {
+    const playerSessions = await this.sessionService.startAllSessionsForChallenge(id);
+    this.appGateway.broadcastGameStart(id, playerSessions);
+    
+    return { message: 'Game started', playersAffected: playerSessions.length };
   }
 
   // 🔒 CÁC API BẢO MẬT DƯỚI ĐÂY CHỈ DÀNH CHO ADMIN (GIỮ NGUYÊN)

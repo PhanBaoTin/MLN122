@@ -75,10 +75,10 @@ export default function Lobby() {
       scrollToBottom();
     });
 
-    socket.on('game:started', (data: any) => {
-      // If we received game started for ourselves (maybe triggered by another device with same ID?), just safety
-      if (data.playerId === playerId) {
-        navigate(`/game/${data.sessionId}`); // Note: we need the actual session ID. Wait, the backend doesn't send sessionId in this event!
+    socket.on('game:adminStart', (data: { playerSessions: { playerId: string; sessionId: string }[] }) => {
+      const mySession = data.playerSessions.find(ps => ps.playerId === playerId);
+      if (mySession && mySession.sessionId) {
+        navigate(`/game/${mySession.sessionId}`);
       }
     });
 
@@ -88,9 +88,9 @@ export default function Lobby() {
       socket.off('chat:history');
       socket.off('chat:message');
       socket.off('chat:adminAnnounce');
-      socket.off('game:started');
+      socket.off('game:adminStart');
     };
-  }, [socket, challengeId, playerId, navigate]);
+  }, [socket, challengeId, playerId, sessionId, navigate]);
 
   const scrollToBottom = () => {
     setTimeout(() => {
@@ -111,31 +111,7 @@ export default function Lobby() {
     setNewMessage('');
   };
 
-  const handleStartGame = async () => {
-    try {
-      // In our design, joining creates the session, so we just need to get our session
-      // For simplicity, let's query the backend for our active session for this challenge
-      const res = await api.get(`/challenges/${challengeId}/sessions/my`); // wait, we didn't implement this endpoint.
-      // Alternatively, we created the session on /join. We should have stored the sessionId in localStorage or Zustand!
-      // But we didn't. Let's fix that later. For now, since this is a demo, let's just assume we can find it or we create it here.
-    } catch (err) {
-      console.error(err);
-    }
-  };
 
-  // Quick fix for the missing session ID: Since we create session on /join, let's navigate directly or update playerStore
-  // Actually, we should fetch the user's active session.
-  const handlePlayNow = async () => {
-    try {
-      // In a real implementation, we would query the backend for our latest session
-      // For now, let's just make the user re-join or fetch it.
-      // Let's implement a quick fix in playerStore if needed, or assume the backend has it.
-      // We will handle this in the next steps. For now, we will add a fallback.
-      alert('Play logic will connect here');
-    } catch (err) {
-      console.error(err);
-    }
-  }
 
   return (
     <div className="w-full h-[calc(100vh-4rem)] flex flex-col md:flex-row gap-6">
@@ -155,12 +131,9 @@ export default function Lobby() {
               </div>
             </div>
 
-            <button
-              onClick={() => sessionId && navigate(`/game/${sessionId}`)}
-              className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white rounded-xl font-bold shadow-lg shadow-indigo-600/30 transition-transform transform hover:scale-[1.02]"
-            >
-              Start Playing
-            </button>
+            <div className="text-right flex items-center h-full">
+              <p className="text-lg font-medium text-indigo-300 animate-pulse">Waiting for Admin to start...</p>
+            </div>
           </div>
 
           <div className="grid grid-cols-4 gap-4 mt-6 pt-6 border-t border-slate-700/50">
