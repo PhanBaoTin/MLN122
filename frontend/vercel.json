@@ -1,6 +1,10 @@
 {
     "rewrites": [
         {
+            "source": "/uploads/:path*",
+            "destination": "https://mln122-wcsr.onrender.com/uploads/:path*"
+        },
+        {
             "source": "/(.*)",
             "destination": "/index.html"
         }
