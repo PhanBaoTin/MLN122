@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
 
-const socketUrl = import.meta.env.VITE_API_URL 
-  ? import.meta.env.VITE_API_URL.replace('/api', '') 
-  : 'http://localhost:3000';
+const socketUrl = import.meta.env.VITE_API_URL
+  ? import.meta.env.VITE_API_URL.replace('/api', '')
+  : 'https://mln122-wcsr.onrender.com';
 
 export function useSocket(challengeId: string | null, playerId: string | null, playerName: string | null) {
   const [socket, setSocket] = useState<Socket | null>(null);

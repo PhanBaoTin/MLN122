@@ -487,7 +487,7 @@ export default function ChallengeManager() {
               {challenge.images?.map((img, idx) => (
                 <div key={idx} className="relative group rounded-xl overflow-hidden border border-slate-700 aspect-square">
                   {/* Note: In a real environment, the backend server URL is needed here. For this demo, using a generic prefix. */}
-                  <img src={`http://localhost:3000${img.url}`} alt={img.originalName} className="w-full h-full object-cover" />
+                  <img src={`${img.url}`} alt={img.originalName} className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
                     <button
                       onClick={() => handleRemoveImage(idx)}

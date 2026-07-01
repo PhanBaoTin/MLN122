@@ -230,9 +230,9 @@ export default function GamePlay() {
 
           <div className="flex flex-col items-center">
             <p className="text-xs text-slate-400 mb-1">Target Image</p>
-            <img 
-              src={`http://localhost:3000${session.assignedImageUrl}`} 
-              alt="Reference" 
+            <img
+              src={`${session.assignedImageUrl}`}
+              alt="Reference"
               className="w-16 h-16 md:w-20 md:h-20 object-cover rounded-lg border border-slate-600 shadow-md hover:scale-150 transition-transform duration-300 origin-top"
             />
           </div>
@@ -253,7 +253,7 @@ export default function GamePlay() {
 
         <PuzzleBoard
           puzzleState={session.puzzleState}
-          imageUrl={`http://localhost:3000${session.assignedImageUrl}`}
+          imageUrl={`${session.assignedImageUrl}`}
           gridSize={session.puzzleState.length}
           onTileClick={handleTileClick}
           canMove={canMove}
